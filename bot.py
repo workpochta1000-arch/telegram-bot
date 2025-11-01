@@ -15,17 +15,17 @@ from aiogram.types import (
 )
 
 # ================== НАСТРОЙКИ ==================
-API_TOKEN = "8324841507:AAF6knHWV52hDXFgX2XUPJV8fTYMXR0UDfc"
+API_TOKEN = os.getenv("API_TOKEN")  # токен берём из Render secrets
 CHANNEL_ID = "-1002768607899"
 ADMIN_ID = 8059166788
 PHOTOS_FOLDER = "Photo"
 VIDEOS_FOLDER = "Video"
+DB_PATH = "database.db"
 # ===============================================
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 awaiting_broadcast: dict[int, bool] = {}
-DB_PATH = "database.db"
 
 # ----------------- БАЗА ДАННЫХ -----------------
 CREATE_USERS_SQL = """
@@ -84,11 +84,6 @@ async def get_stats():
         total_users, total_referrals = await cur.fetchone()
         return total_users or 0, total_referrals or 0
 
-async def get_all_users():
-    async with aiosqlite.connect(DB_PATH) as db:
-        cur = await db.execute("SELECT user_id FROM users")
-        return [r[0] for r in await cur.fetchall()]
-
 # ----------------- МЕДИА -----------------
 def random_media_from(folder: str) -> Optional[str]:
     path = os.path.abspath(folder)
@@ -130,7 +125,7 @@ async def send_profile(user_id: int, msg: types.Message):
     text = (
         f"👤 Ник: @{user[1] or 'Без ника'}\n"
         f"👥 Рефералов: {user[3]}\n"
-        f"👣 Внутренний баланс: {user[2]} 💎"
+        f"💎 Внутренний баланс: {user[2]} кристалликов"
     )
     await msg.answer(text, reply_markup=profile_inline_kb())
 
@@ -178,14 +173,14 @@ async def send_random_media(user_id: int, media_type: str, msg: types.Message):
         if media_type == "photo":
             await msg.answer_photo(
                 types.FSInputFile(file_path),
-                caption="📸 Твое фото!",
+                caption="📸 Фото (скрытое)",
                 reply_markup=after_media_kb(media_type),
                 has_spoiler=True
             )
         else:
             await msg.answer_video(
                 types.FSInputFile(file_path),
-                caption="🎥 Твое видео!",
+                caption="🎥 Видео (скрытое)",
                 reply_markup=after_media_kb(media_type),
                 has_spoiler=True
             )
@@ -224,7 +219,7 @@ async def admin_panel(message: types.Message):
 
 # ----------------- ЗАПУСК -----------------
 async def main():
-    print("✅ Запуск бота...")
+    print("✅ Бот запущен")
     await init_db()
     await dp.start_polling(bot)
 
